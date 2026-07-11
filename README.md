@@ -62,3 +62,58 @@ PORT=3000 HOSTNAME=0.0.0.0 node .next/standalone/server.js
 pm2 start .next/standalone/server.js --name pathforge-nc
 pm2 save
 ```
+
+
+
+可以启动，但不完整：
+最后一条命令是前台运行，SSH 断开后可能停止。
+standalone 默认不会复制 public 和 .next/static。本项目的 NC 解析 Worker 位于 public，不复制会导致文件加载失败。Next.js 官方说明
+推荐使用 PM2：
+# 进入项目目录
+cd /opt/NCRenderer
+
+# 安装并构建
+npm ci
+npm run build
+
+# 补齐 standalone 静态资源
+cp -r public .next/standalone/
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/
+
+# 安装 PM2
+sudo npm install -g pm2
+
+# 后台启动
+cd .next/standalone
+PORT=3000 HOSTNAME=0.0.0.0 pm2 start server.js --name nc-renderer
+
+# 保存进程列表
+pm2 save
+
+# 设置服务器重启后自动运行
+pm2 startup
+pm2 startup 会输出一条带 sudo 的命令，还需要复制执行那条命令，然后再次运行：
+pm2 save
+常用管理命令：
+pm2 status
+pm2 logs nc-renderer
+pm2 restart nc-renderer
+pm2 stop nc-renderer
+pm2 delete nc-renderer
+更新部署：
+cd /opt/NCRenderer
+git pull
+npm ci
+npm run build
+
+cp -r public .next/standalone/
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/
+
+pm2 restart nc-renderer --update-env
+如果前面配置 Nginx，建议服务只监听本机：
+PORT=3000 HOSTNAME=127.0.0.1 pm2 start server.js --name nc-renderer
+如果没有 Nginx、需要直接通过服务器 IP 访问，才使用：
+HOSTNAME=0.0.0.0
+并在防火墙或云服务器安全组中开放 TCP 3000 端口。
