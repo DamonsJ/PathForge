@@ -117,3 +117,49 @@ PORT=3000 HOSTNAME=127.0.0.1 pm2 start server.js --name nc-renderer
 如果没有 Nginx、需要直接通过服务器 IP 访问，才使用：
 HOSTNAME=0.0.0.0
 并在防火墙或云服务器安全组中开放 TCP 3000 端口。
+
+
+服务器的 Node.js 18 太旧。建议升级到 Node.js 22 LTS；Node 22 当前仍是受支持的 LTS 版本。Node.js 官方下载
+使用 NVM 升级：
+# 安装 NVM
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash
+
+# 当前终端立即加载 NVM
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+# 安装并切换 Node.js 22
+nvm install 22
+nvm use 22
+nvm alias default 22
+
+# 确认版本
+node -v
+npm -v
+node -v 应显示 v22.x.x。
+然后删除 Node 18 安装的旧依赖并重新构建：
+cd /opt/NCRenderer
+
+rm -rf node_modules .next
+npm ci
+npm run build
+确认 server.js：
+ls -la .next/standalone/server.js
+复制静态资源：
+cp -r public .next/standalone/
+mkdir -p .next/standalone/.next
+cp -r .next/static .next/standalone/.next/
+切换 Node 版本后，PM2 也建议重新安装：
+npm install -g pm2
+pm2 kill
+最后后台启动：
+PORT=3000 HOSTNAME=0.0.0.0 \
+pm2 start .next/standalone/server.js --name nc-renderer
+
+pm2 save
+pm2 startup
+执行 pm2 startup 输出的那条 sudo 命令，然后再运行：
+pm2 save
+pm2 status
+pm2 logs nc-renderer
+不要再使用 Node.js 18 构建，否则 Next.js 会继续直接拒绝启动。
