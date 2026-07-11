@@ -57,10 +57,10 @@ export default function Home() {
   const [draggingFile, setDraggingFile] = useState(false);
   const [showPath, setShowPath] = useState(true);
   const [showPoints, setShowPoints] = useState(true);
-  const [pointSize, setPointSize] = useState(3);
+  const [pointSize, setPointSize] = useState(5);
   const [simulationIndex, setSimulationIndex] = useState<number | null>(null);
   const [playDirection, setPlayDirection] = useState<-1 | 0 | 1>(0);
-  const [simulationSpeed, setSimulationSpeed] = useState(120);
+  const [simulationSpeed, setSimulationSpeed] = useState(50);
   const [error, setError] = useState<string | null>(null);
 
   const applyData = useCallback((next: NCData) => {
@@ -128,11 +128,11 @@ export default function Home() {
     const timer = window.setInterval(() => {
       setSimulationIndex((previous) => {
         const current = previous ?? (direction > 0 ? 0 : pointCount - 1);
-        const amount = Math.max(1, Math.round(simulationSpeed / 20));
+        const amount = Math.max(1, Math.round(simulationSpeed / 10));
         const next = Math.max(0, Math.min(pointCount - 1, current + direction * amount));
         return next;
       });
-    }, 50);
+    }, 100);
     return () => window.clearInterval(timer);
   }, [playDirection, pointCount, simulationSpeed]);
 
@@ -179,7 +179,7 @@ export default function Home() {
   const selectRow = (index: number) => {
     setSelected(index);
     if (simulationIndex != null) setSimulationIndex(index);
-    rendererRef.current?.focusPoint(index);
+    rendererRef.current?.selectPoint(index);
   };
 
   const stepSimulation = (direction: -1 | 1) => {
@@ -308,7 +308,7 @@ export default function Home() {
             <button type="button" className={playDirection === 1 ? "active" : ""} onClick={() => playSimulation(1)} disabled={pointCount === 0} title="向前模拟" aria-label="向前模拟">▶</button>
             <button type="button" onClick={() => stepSimulation(1)} disabled={pointCount === 0} title="下一个点" aria-label="下一个点">▶|</button>
             <span className="simulation-position">{simulationIndex == null ? "未开始" : `${(simulationIndex + 1).toLocaleString()} / ${pointCount.toLocaleString()}`}</span>
-            <label>速度 <input type="range" min="20" max="2000" step="20" value={simulationSpeed} onChange={(event) => setSimulationSpeed(Number(event.target.value))} /><b>{simulationSpeed} 点/秒</b></label>
+            <label>速度 <input type="range" min="10" max="2000" step="10" value={simulationSpeed} onChange={(event) => setSimulationSpeed(Number(event.target.value))} /><b>{simulationSpeed} 点/秒</b></label>
             <button type="button" className="stop-button" onClick={() => { setPlayDirection(0); setSimulationIndex(null); setSelected(null); }} disabled={simulationIndex == null} title="结束模拟" aria-label="结束模拟">■</button>
           </div>
           {selectedCoords && <div className="selection-card">

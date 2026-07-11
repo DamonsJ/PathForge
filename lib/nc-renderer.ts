@@ -154,6 +154,13 @@ function rotationMatrix(q: Quaternion): Float32Array {
   ]);
 }
 
+function positiveIsoOrientation(): Quaternion {
+  return multiplyQuaternion(
+    axisAngle(1, 0, 0, -2.186276035465284),
+    axisAngle(0, 0, 1, Math.PI / 4),
+  );
+}
+
 export class NCWebGLRenderer {
   private gl: WebGL2RenderingContext;
   private renderProgram: WebGLProgram;
@@ -167,7 +174,7 @@ export class NCWebGLRenderer {
   private radius = 1;
   private target: [number, number, number] = [0, 0, 0];
   private scale = 1;
-  private orientation: Quaternion = multiplyQuaternion(axisAngle(1, 0, 0, 0.72), axisAngle(0, 0, 1, -0.7));
+  private orientation: Quaternion = positiveIsoOrientation();
   private selected: number | null = null;
   private simulationIndex: number | null = null;
   private options = { showPath: true, showPoints: true, pointSize: 3 };
@@ -208,6 +215,7 @@ export class NCWebGLRenderer {
     this.chunks = [];
     this.positions = positions;
     this.bounds = bounds;
+    this.orientation = positiveIsoOrientation();
     const count = positions.length / 3;
     for (let start = 0; start < count; start += CHUNK_POINTS) {
       const chunkCount = Math.min(CHUNK_POINTS, count - start);
@@ -240,7 +248,7 @@ export class NCWebGLRenderer {
     if (view === "back") this.orientation = multiplyQuaternion(front, axisAngle(0, 0, 1, Math.PI));
     if (view === "left") this.orientation = multiplyQuaternion(front, axisAngle(0, 0, 1, Math.PI / 2));
     if (view === "right") this.orientation = multiplyQuaternion(front, axisAngle(0, 0, 1, -Math.PI / 2));
-    if (view === "iso") this.orientation = multiplyQuaternion(axisAngle(1, 0, 0, 0.72), axisAngle(0, 0, 1, -0.7));
+    if (view === "iso") this.orientation = positiveIsoOrientation();
     this.draw();
   }
 
@@ -259,6 +267,12 @@ export class NCWebGLRenderer {
     this.selected = index;
     this.target = [this.positions[index * 3], this.positions[index * 3 + 1], this.positions[index * 3 + 2]];
     this.scale = Math.max(this.scale, Math.min(this.canvas.clientWidth, this.canvas.clientHeight) / Math.max(this.radius * 0.08, 1e-9));
+    this.draw();
+  }
+
+  selectPoint(index: number) {
+    if (index < 0 || index * 3 + 2 >= this.positions.length) return;
+    this.selected = index;
     this.draw();
   }
 
